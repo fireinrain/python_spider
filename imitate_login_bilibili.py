@@ -11,6 +11,8 @@ import re
 import requests
 import http.cookiejar
 from PIL import Image
+import rsa
+import base64
 import time
 import json
 
@@ -87,10 +89,36 @@ def login(username, password):
     # 保存cookie到本地
     session.cookies.save(ignore_discard=True, ignore_expires=True)
 
+#     获取加密密码
+# 因为还不知道加密的具体细节
+# 所以这部没有成功
+# 虽然可以得带一串和真加密密文一样长的密文
+def get_password(password):
+    req=requests.get('https://passport.bilibili.com/login?act=getkey')
+    hash_key=req.text
+    hash_key_list=list(hash_key)
+    hash=hash_key[8:25]
+    key=hash_key[62:-30]
+    key_list=key.split('\\n')
+    key="".join(i for i in key_list)
+    # print(key)
+    # key=key_list[0]+key_list[1]+key_list[2]+key_list[3]
+    passwd=password
+    psd=hash+str(passwd)
+
+
+    base_decode=base64.b64decode(key)
+    (base_decode, base_decode) = rsa.newkeys(1024)
+    print(base_decode)
+    # 对密文加密
+    rsa_pass=rsa.encrypt(psd.encode(),base_decode)
+    password=base64.b64encode(rsa_pass).decode('utf-8')
+    return password
+
 
 if __name__ == '__main__':
     account = input('输入账号：')
-    secret = 730089615
+    secret = input("输入密码：")
     login(account, secret)
     # 设置里面的简介页面，登录后才能查看。以此来验证确实登录成功
     get_url = 'http://www.bilibili.com/account/dynamic'
@@ -103,3 +131,4 @@ if __name__ == '__main__':
     # pwd="Jq7VWWK+oPKRcmLWI2luu4R9L46KhteSm2I9Z1qYwFLyb3e1ES76XTypsl335vwxD8IKiJf3Hx0Ublfm9hHIVAH345PsKH/rXIKyTxaljCF2sT8ETBwmCfP0mOxe7vel+bFNxCWXMSixyklviqu4MM8CmCHwjuQ35M8WcJzePkw="
     # userid='575563079@qq.com'
     # vdcode='yd3mc'#验证码
+
