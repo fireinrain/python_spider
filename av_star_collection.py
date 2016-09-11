@@ -135,7 +135,7 @@ def pic_url_get(page_url):
 
 
 if __name__=='__main__':
-    list=get_mov_url('https://www.javbus2.com/star/92l')
+    list=get_mov_url('https://www.javbus2.com/star/2xi')
     text=list[0]
     pic=list[1]
     # print(text)

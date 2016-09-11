@@ -52,7 +52,7 @@ def soup_page_get(url):
 """
 # # get the proxy
 def get_xici():
-    of = open('proxy.txt', 'w')
+    of = open('./source_file/proxy.txt', 'w')
     for page in range(1, 10):
         url = 'http://www.xicidaili.com/nn/%s' % page
 
@@ -127,7 +127,7 @@ def get_ip_bus():
         return page
     page=get_process(soup)
     def write_to_text(page):
-        with open('ip_bus.txt','w',encoding='utf-8') as file:
+        with open('./source_file/ip_bus.txt','w',encoding='utf-8') as file:
             for line in page:
                 file.write(line+'\n')
     write_to_text(page)
@@ -166,7 +166,7 @@ def get_mimi_ip():
     page = get_process(soup)
 
     def write_to_text(page):
-        with open('mimi_ip.txt', 'w', encoding='utf-8') as file:
+        with open('source_file/mimi_ip.txt', 'w', encoding='utf-8') as file:
             for line in page:
                 file.write(line + '\n')
 

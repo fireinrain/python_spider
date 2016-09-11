@@ -59,15 +59,11 @@ def get_page_info(page_html):
     return detail
 
 
-
 def get_job_info(urls):
-    for url in urls:
-        page_info=html_get(url)
-
+    pass
 
 def get_last_page(url):
     pass
-
 
 if __name__=="__main__":
     # html = html_get('http://www.lagou.com/lagouhtml/a44.html')
@@ -75,11 +71,13 @@ if __name__=="__main__":
     # print(urls)
     page=1
     item=0
-    with open('lagou_job.txt', 'a+', encoding='utf-8') as file:
+    job_name=input('请输入职位名（如php）:').title()
+
+    with open('lagou_job_java.txt', 'a+', encoding='utf-8') as file:
         while True:
 
             try:
-                url='http://www.lagou.com/zhaopin/Python/%d' % page
+                url='http://www.lagou.com/zhaopin/%s/%d' % (job_name,page)
                 html = html_get(url)
                 urls=html_parse(html)
                 if urls:

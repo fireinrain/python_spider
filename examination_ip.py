@@ -74,7 +74,7 @@ if __name__=='__main__':
                 time.sleep(1)
 
             # print(list)
-    with open('can_used_ip.txt', 'w+') as file:
+    with open('./source_file/can_used_ip.txt', 'w+') as file:
         for each_line in list:
             file.write(each_line[0]+'='+each_line[1])
             print('验证完成')
