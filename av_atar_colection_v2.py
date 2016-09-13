@@ -26,6 +26,8 @@ from bs4 import BeautifulSoup
 from random import choice
 from time import sleep
 from random import randint
+from time import time
+from tomorrow import threads
 from os import mkdir,chdir
 
 UserAgent = [
@@ -116,13 +118,13 @@ def search_star(film_about):
     # print(len(image_txt))
     return [star_urls,name]
 
-
+@threads(10)
 def star_each_film(star_urls_result):
     star_urls=star_urls_result[0]
     star_name=star_urls_result[1]
     # print(star_name)
     for url in star_urls:
-        sleep(1)
+        # sleep(1)
         soup = url_open_deal(url)
         title=soup.select('h3')[0].get_text()
         film_info=soup.select('div.col-md-3')[0].get_text()
@@ -132,18 +134,19 @@ def star_each_film(star_urls_result):
         magnent_str= soup.select('script')[8].get_text()
         magnent_str_list=magnent_str.split(' ')
         gid=magnent_str_list[3].split(';')[0]
-        lang='zh'
-        img=magnent_str_list[9].split(';')[0]
+        # lang='zh'
+        img=magnent_str_list[9].split(';')[0][1:-1]
         # print(img)
         uc='0'
         floor=str(randint(99,1000))
 
         # 构造magnent磁力链接的请求url
         # url = 'https://www.javbus2.com/ajax/uncledatoolsbyajax.php?gid=31588090853&lang=zh&img=https://pics.javbus.info/cover/5jgu_b.jpg&uc=0&floor=791'
-        magnent_url="https://www.javbus2.com/ajax/uncledatoolsbyajax.php?"+'gid='+gid+'&lang=zh&img='+img+'&uc=0&floor='+floor
+        magnent_url="https://www.javbus2.com/ajax/uncledatoolsbyajax.php?"+"gid="+gid+"&lang=zh&img="+img+"&uc=0&floor="+floor
         # print(type(magnent_url))
-        def open_mag_url(magnent_url):
+        def open_mag_url(magnent_url,url):
             agent=choice(UserAgent)
+
             headers = {
                 "authority": "www.javbus2.com",
                 "method": "GET",
@@ -151,7 +154,22 @@ def star_each_film(star_urls_result):
                 "user-agent": agent,
             }
 
+            req = requests.get(magnent_url, headers=headers).content
+            soup = BeautifulSoup(req, 'lxml')
+            mag = soup.select('tr')
+            # print(mag)
+            magnent_container = []
+            for i in mag:
+                magnent = i.td.a.get('href')
+                magnent_info = i.get_text().split()
+                # magnent_info=magnent_info[0]+'_'+magnent_info[1]+'_'+magnent_info[2]
+                magnent_info.append(magnent)
+                magnent_container.append(magnent_info)
+            return magnent_container
 
+            # 获取磁力链接列表信息
+        magnent_container=open_mag_url(magnent_url,url)
+        # print(magnent_container)
 
         sample_images=soup.select('div#sample-waterfall a.sample-box')
         sample_images_urls=[]
@@ -159,7 +177,7 @@ def star_each_film(star_urls_result):
             image_url=image.get('href')
             sample_images_urls.append(image_url)
 
-        print(magnent_url)
+        print([title,film_info,film_pic_url,magnent_container])
 
 
 # 获取单个页面的磁力链接，他是js加载的
@@ -168,10 +186,39 @@ def star_each_film(star_urls_result):
 def get_magnent(url):
     pass
 
+
+def mag_url_open(url):
+
+    headers = {
+        "authority": "www.javbus2.com",
+        "method": "GET",
+        "referer": "https://www.javbus2.com/SNIS-687",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36",
+    }
+    req=requests.get(url,headers=headers).content
+    soup=BeautifulSoup(req,'lxml')
+    mag=soup.select('tr')
+    magnent_container=[]
+    for i in mag:
+        magnent=i.td.a.get('href')
+        print(magnent)
+        magnent_info=i.get_text().split()
+        # magnent_info=magnent_info[0]+'_'+magnent_info[1]+'_'+magnent_info[2]
+        magnent_info.append(magnent)
+        magnent_container.append(magnent_info)
+    # return magnent_container
+
+
 def main():
     film_about=input('请输入女盆友相关信息(番号或是名字)：')
     star_urls=search_star(film_about)
+    # 影片数量
+    number=len(star_urls[0])
+    time_start=time()
     star_each_film(star_urls)
+    time_end = time()
+    print('共耗时：%.2f,共找到：%d部' % (time_end-time_start,number))
+
 
     # url='https://www.javbus2.com/SNIS-642'
     # star_each_page(url)
