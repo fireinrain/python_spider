@@ -8,16 +8,19 @@ requests
 bs4
 time
 os
+random
+multiprocessing.dummy
 
 脚本尝试爬取url：https://www.javbus2.com/
 尝试做一个查询脚本，并自动将获取的信息保存下来
 功能描述
 1.输入女优名字可以进行查询，如果错误将返回没有查到
-2.输入番号，可以进行番号查询，查询结果，包括该女优的信息，作品信息
-3.选着作品会将对应的磁力链接下载下来，对应会创建一个用于保存的文件夹
-4.第一步查询到的结果，包含女优的详细信息，和所有的作品信息
-
-
+2.输入番号，可以进行番号查询，查询结果，包括该女优的信息
+3.选着作品会将对应的磁力链接下载下来，保存在一个txt文件内
+4.进行用户选着
+5.进行资源下载
+6添加进度条显示
+7添加获取某优优的所有作品
 """
 
 import requests
@@ -112,7 +115,7 @@ def search_star(film_about):
     else:
         name=film_about
         star_urls=[]
-
+        # 如果输入的是名字则重复查询
         enter_url = image_txt[0].get('href')
         soup2 = url_open_deal(enter_url)
         image_txt2 = soup2.select('div.col-md-3 p a')
@@ -128,10 +131,12 @@ def search_star(film_about):
             except Exception as e:
                 continue
         # print(name)
+
         soup3 = url_open_deal(url)
         image_txt3 = soup3.select('a.movie-box')
         avstar_introduce = soup3.select('div.photo-info')[0].get_text()
         print(avstar_introduce)
+
         for item in image_txt3:
             each_url = item.get('href')
             star_urls.append(each_url)
@@ -199,8 +204,9 @@ def star_each_film(url):
     for image in sample_images:
         image_url=image.get('href')
         sample_images_urls.append(image_url)
+    sample_images_urls.append(film_pic_url)
     # print(sample_images_urls)
-    return [title,film_info,film_pic_url,magnent_container,sample_images_urls]
+    return [title,film_info,'',magnent_container,sample_images_urls]
 
 # 获取单个页面的磁力链接，他是js加载的
 # 通过开发者工具分析，要构造好请求的url，和headers
@@ -209,7 +215,6 @@ def parse_films_infomation(item):
     title = item[0]
     title_deal = ''.join(title.split('*'))
     os.mkdir(title_deal)
-
     os.chdir(title_deal)
     film_info = item[1]
     with open('film_tag.txt', 'w+', encoding='utf-8') as file:
@@ -227,13 +232,13 @@ def parse_films_infomation(item):
 
     film_pic_url = item[2]
     sample_images_urls = item[4]
-    print(film_pic_url)
-    print(type(sample_images_urls))
-    # sample_images_urls.append(film_pic_url)
+
+    # print(type(sample_images_urls))
+
     # 设置线程池
-    child_pool = ThreadPool(16)
+    child_pool = ThreadPool(12)
     result = child_pool.map(download, sample_images_urls)
-    print('下载完成')
+    # print('下载完成')
     child_pool.close()
     child_pool.join()
     os.chdir('../')
@@ -244,36 +249,122 @@ def download(url):
     with open(url.split('/',6)[-1],'wb') as file:
         file.write(req)
 
-def main():
-    film_about=input('请输入女盆友相关信息(番号或是名字)：')
-    star_urls_and_name=search_star(film_about)
-    # print(star_urls_and_name)
-    # 影片数量
-    number=len(star_urls_and_name[0])
-    time_start=time()
-    star_urls=star_urls_and_name[0]
-    # for url in star_urls:
-    #
-    #     info_list=star_each_film(url)
-    #     print(info_list)
 
-    # 用map函数代替for循环
-    # 经过调试16个线程获取时间最短
-    pool=ThreadPool(16)
-    results=pool.map(star_each_film,star_urls)
+def star_url_get(url):
+    soup = url_open_deal(url)
+    result = soup.select('div.item a')
+    star_url=[]
+    for i in result:
+        star_url.append(i.get('href'))
+    return star_url
+
+
+# 获取所有有码优优的网址链接,然后查询,获取作品列表
+# 一共可以获取34080位演员作品的链接网址
+def fetch_all_star(url=None):
+    # pages = 682
+    pages = int(input('下载多少页：'))
+    time_start=time()
+    url='https://www.javbus2.com/actresses/'
+    urls=[url+str(i) for i in range(1,pages)]
+    pool=ThreadPool(30)
+    url_collection=pool.map(star_url_get,urls)
     pool.close()
     pool.join()
+    cont=0
+    with open('all_star_url1.txt','w+') as file:
+        for page in url_collection:
+            for url in page:
+                file.write(url+'\n')
+                cont+=1
+    time_end=time()
+    print('下载共耗时：%.2f秒,共找到：%d个链接' % (time_end - time_start, cont))
 
-    for infomation in results:
-        parse_films_infomation(infomation)
-    # print(results)
-    time_end = time()
-    print('共耗时：%.2f秒,共找到：%d部' % (time_end-time_start,number))
 
 
-    # url='https://www.javbus2.com/SNIS-642'
-    # star_each_page(url)
+def main():
+    while True:
+        film_about=input('请输入优优相关信息(番号或是名字)：')
+        star_urls_and_name=search_star(film_about)
+        star_name=star_urls_and_name[1]
+
+        # 在查询成功后，询问是否下载文件
+        command=input('查询成功，是否下载相关文件？(y/n/q(退出)大小写均可):')
+        if command in 'nN':
+            print()
+            pass
+
+        elif command in 'Yy':
+
+            file_path=os.curdir+'/'+star_name
+            # print(os.path.exists(file_path))
+
+            if os.path.exists(file_path):
+                query=input('目录存在，是否删除并重新下载(y/n/q):')
+                if query=='y':
+                    # 地柜输出目录和文件
+                    for root, dirs, files in os.walk(file_path, topdown=False):
+                        for name in files:
+                            os.remove(os.path.join(root,name))
+                        for name in dirs:
+                            os.rmdir(os.path.join(root,name))
+                    os.rmdir(file_path)
+                    print('删除成功')
+                elif query=='n':
+                    break
+                else:
+                    print('输入有误')
+
+            print('请稍后，正在努力下载。。。')
+            # 创建查询结果对应的文件夹
+            os.mkdir(star_name)
+            os.chdir(star_name)
+
+            # print(star_urls_and_name)
+            # 影片数量
+            number=len(star_urls_and_name[0])
+            time_start=time()
+            star_urls=star_urls_and_name[0]
+            # for url in star_urls:
+            #
+            #     info_list=star_each_film(url)
+            #     print(info_list)
+
+            # 用map函数代替for循环
+            # 经过调试30个线程获取时间最短
+            pool=ThreadPool(30)
+            results=pool.map(star_each_film,star_urls)
+            pool.close()
+            pool.join()
+
+            count=1
+            j='*'
+            length=len(results)
+            for infomation in results:
+                parse_films_infomation(infomation)
+                # 实现一个进度条
+                j += '*'
+                print(str(int((count / length) * 100)) + '%  ||' + j + '->' + "\r",end='')
+                count+=1
+            # print(results)
+            time_end = time()
+            print('下载共耗时：%.2f秒,共找到：%d部' % (time_end-time_start,number))
+
+            # 退回根目录
+            os.chdir('/')
+            print('为了防止服务器屏蔽，休息一下5S。')
+            sleep(5)
+            sleep(choice(range(8)))
+        elif command=='q':
+            break
 
 
 if __name__=='__main__':
+    print('***************寻优1.0****************')
+    print('*********Written By Lzhaoyang*********')
+    print('***********Date:2016.09.12************')
     main()
+
+    # 获取所有演员作品链接
+    # fetch_all_star()
+
