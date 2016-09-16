@@ -86,7 +86,7 @@ def search_star(film_about):
     # 判断查询结果，如果关键字是番号那么结果就是一个片子
     # 根据这个片子提取片子女神，然后在查询，获得查询结果的第一页链接
     if len(image_txt)==1:
-        star_urls = []
+        # star_urls = []
         enter_url=image_txt[0].get('href')
         soup2=url_open_deal(enter_url)
         image_txt2 = soup2.select('div.col-md-3 p a')
@@ -102,16 +102,21 @@ def search_star(film_about):
             except Exception as e:
                 continue
         # print(name)
+
         soup3 = url_open_deal(url)
-        image_txt3 = soup3.select('a.movie-box')
+        # image_txt3 = soup3.select('a.movie-box')
         avstar_introduce=soup3.select('div.photo-info')[0].get_text()
         print(avstar_introduce)
-        for item in image_txt3:
-            each_url = item.get('href')
-            star_urls.append(each_url)
+        # for item in image_txt3:
+        #     each_url = item.get('href')
+        #     star_urls.append(each_url)
         # url_get=image_txt2[]
         # print(star_urls)
     #    如果关键字是女神名字，那么直接返回查询结果的第一页
+
+
+    #     尝试循环抓取页面，获得所有作品信息
+        star_urls=star_url_get(url)
     else:
         name=film_about
         star_urls=[]
@@ -133,14 +138,14 @@ def search_star(film_about):
         # print(name)
 
         soup3 = url_open_deal(url)
-        image_txt3 = soup3.select('a.movie-box')
+        # image_txt3 = soup3.select('a.movie-box')
         avstar_introduce = soup3.select('div.photo-info')[0].get_text()
         print(avstar_introduce)
 
-        for item in image_txt3:
-            each_url = item.get('href')
-            star_urls.append(each_url)
-
+        # for item in image_txt3:
+        #     each_url = item.get('href')
+        #     star_urls.append(each_url)
+        star_urls = star_url_get(url) #添加了一个循环获取url函数
     # print(len(image_txt))
     return [star_urls,name,avstar_introduce]
 
@@ -214,8 +219,11 @@ def star_each_film(url):
 def parse_films_infomation(item):
     title = item[0]
     title_deal = ''.join(title.split('*'))
-    os.mkdir(title_deal)
-    os.chdir(title_deal)
+    if '/' in title_deal:
+        title_deal=''.join(title.split('/'))
+    else:
+        os.mkdir(title_deal)
+        os.chdir(title_deal)
     film_info = item[1]
     with open('film_tag.txt', 'w+', encoding='utf-8') as file:
         for i in film_info:
@@ -250,12 +258,29 @@ def download(url):
         file.write(req)
 
 
+# 因为有的优优作品多，做了分页显示
+# 获取优优作品的所有连接
+
 def star_url_get(url):
-    soup = url_open_deal(url)
-    result = soup.select('div.item a')
-    star_url=[]
-    for i in result:
-        star_url.append(i.get('href'))
+    page=1
+    star_url = []
+    urls=url
+    while True:
+        page_url=urls+'/'+str(page)
+        sleep(1)
+        soup = url_open_deal(page_url)
+        result = soup.select('div.item a')
+        page_result=soup.select('a.movie-box')
+        if page_result==[]:
+            break
+        else:
+
+            for i in result:
+                star_url.append(i.get('href'))
+        # input('yes?')
+        page+=1
+        # print(star_url)
+        # print(len(star_url))
     return star_url
 
 
@@ -353,7 +378,6 @@ def main():
             # 退回根目录
             os.chdir('/')
             print('为了防止服务器屏蔽，休息一下5S。')
-            sleep(5)
             sleep(choice(range(8)))
         elif command=='q':
             break
@@ -367,4 +391,3 @@ if __name__=='__main__':
 
     # 获取所有演员作品链接
     # fetch_all_star()
-

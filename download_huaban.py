@@ -35,8 +35,7 @@ UserAgent = [
     'Mozilla/5.0 (Windows; U; Windows NT 5.2) AppleWebKit/525.13 (KHTML, like Gecko) Version/3.1 Safari/525.13'
 ]
 
-user_agent=choice(UserAgent)
-head = {'User-Agent': user_agent }
+
 TimeOut = 30
 
 
@@ -104,10 +103,18 @@ if __name__=='__main__':
     url_image = 'http://hbimg.b0.upaiyun.com/'
 
     query_string=input('请输入要查询的关键词：')
-    url = "http://huaban.com/search/?q="+query_string
+    global url
+    url = "http://huaban.com/search/?q="+query_string+"&sort=all"
     global image_numbers
     image_numbers=int(input('下载多少张：'))
     down_dir = query_string
+
+    user_agent = choice(UserAgent)
+    head = {'User-Agent': user_agent,
+            'Host': 'huaban.com',
+            # 'Referer': url,
+
+            }
 
     url_query = "http://huaban.com/search/?q="+query_string+"&per_page=20&wfl=1&page="
 
