@@ -219,11 +219,12 @@ def star_each_film(url):
 def parse_films_infomation(item):
     title = item[0]
     title_deal = ''.join(title.split('*'))
-    if '/' in title_deal:
-        title_deal=''.join(title.split('/'))
-    else:
-        os.mkdir(title_deal)
-        os.chdir(title_deal)
+
+    title_deal=''.join(title_deal.split('/'))
+    title_deal=''.join(title_deal.split(':'))
+
+    os.mkdir(title_deal)
+    os.chdir(title_deal)
     film_info = item[1]
     with open('film_tag.txt', 'w+', encoding='utf-8') as file:
         for i in film_info:
