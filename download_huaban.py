@@ -16,6 +16,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 global photo_number
 global page_count
+global image_data
+image_data=[]
 page_count = 0
 photo_number = 0
 
@@ -37,17 +39,32 @@ UserAgent = [
 
 
 TimeOut = 30
+user_agent = choice(UserAgent)
+head = {'User-Agent': user_agent}
 
 
 
-def downfile(file, img_url):
-    print("开始下载：", file, img_url)
+
+def downfile(down_data):
+    print("开始下载：", down_data[2])
+    image_url=down_data[1]
+
+    # 处理传传进来的参数
+    # 文件名有的不符合规范，所以要处理
+    name_string=down_data[0]
+    # name=[''.join(i) for i in name_list if i in '?、\*" <>|']
+    # 还没有解决文件名过滤问题
+    # for i in ['?', '、', '\\', '*', '\"', '<', '>', '|']:
+    #     name_string = name_string.strip(i)
+    # print(name_string)
     try:
-        resource = requests.get(img_url, stream=True,headers=head).content
-        with open(file, 'wb') as file:
+        resource = requests.get(image_url, stream=True, headers=head).content
+        with open(name_string, 'wb') as file:
             file.write(resource)
     except Exception as e:
-        print("下载失败了", e)
+        # print("下载失败", e)
+        with open(down_data[2]+ '.jpg', 'wb') as file:
+            file.write(resource)
 
 
 def request_page_text(url):
@@ -64,11 +81,12 @@ def request_page_text(url):
 
 def request_url_download(url):
     global page_count
+    global image_data
     page_count += 1
     global photo_number
     # print("请求网址：", url)
     text = request_page_text(url)
-    pattern = re.compile('{"pin_id":(\d*?),.*?"key":"(.*?)",.*?"like_count":(\d*?),.*?"repin_count":(\d*?),.*?}', re.S)
+    pattern = re.compile('{"pin_id":(\d*?),.*?"key":"(.*?)",.*?"raw_text":"(.*?)",.*?"like_count":(\d*?),.*?"repin_count":(\d*?),.*?"username":"(.*?)".*?}', re.S)
     # 参数re.S 是正则表达式，编译参数标识re.DOTALL，即.匹配除、\n 所有字符
     img_query_items = re.findall(pattern, text)
     # print(img_query_items)
@@ -78,24 +96,28 @@ def request_url_download(url):
     for url_items in img_query_items:
         max_pin_id = url_items[0]
         x_key = url_items[1]
-        x_like_count = int(url_items[2])
-        x_repin_count = int(url_items[3])
-        if (x_repin_count > 10 and x_like_count > 10) or x_repin_count > 100 or x_like_count > 20:
-            print("开始下载第{0}张图片".format(photo_number))
-            url_item = url_image + x_key
-            filename = down_dir + str(max_pin_id) + ".jpg"
-            if os.path.isfile(filename):
-                print("文件存在：", filename)
-                continue
-            if photo_number >= image_numbers:
-                # 结束函数
-                return
-
-            downfile(filename, url_item)
-            photo_number += 1
+        # 图片标题
+        x_file_title = url_items[2]
+        x_like_count = int(url_items[3])
+        x_repin_count = int(url_items[4])
+        # 图片收集地址
+        x_author = url_items[5]
+        # if (x_repin_count > 10 and x_like_count > 10) or x_repin_count > 100 or x_like_count > 20:
+        print("开始获取第{0}张图片".format(photo_number))
+        url_item = url_image + x_key
+        filename = x_file_title + ".jpg"
+        if os.path.isfile(filename):
+            print("文件存在：", filename)
+            continue
+        if photo_number >= image_numbers:
+            # 结束函数
+            return image_data
+        image_data.append([filename, url_item, str(max_pin_id)])
+        # downfile(filename, url_item)
+        photo_number += 1
     sleep(1)
     request_url_download(url_query+str(page_count))
-
+    return image_data
 
 
 
@@ -109,12 +131,6 @@ if __name__=='__main__':
     image_numbers=int(input('下载多少张：'))
     down_dir = query_string
 
-    user_agent = choice(UserAgent)
-    head = {'User-Agent': user_agent,
-            'Host': 'huaban.com',
-            # 'Referer': url,
-
-            }
 
     url_query = "http://huaban.com/search/?q="+query_string+"&per_page=20&wfl=1&page="
 
@@ -122,7 +138,13 @@ if __name__=='__main__':
         os.makedirs(down_dir)
         os.chdir(down_dir)
     start_time=time()
-    request_url_download(url + str(page_count))
+    down_data=request_url_download(url + str(page_count))
+    # 开启线程池去下载图片
+    pool=ThreadPool(5)
+    result=pool.map(downfile,down_data)
+    pool.close()
+    pool.join()
+    print(len(down_data))
     end_time=time()
     print('共下载%s张素材，耗时%.2fs' %(image_numbers,end_time-start_time))
 
