@@ -210,6 +210,10 @@
 
 
 
+###############################修改为类抓取#############################
+# 目前只支持特定的目录抓取指定数量的图片
+# 没什么时间。。。。。wtf
+
 import requests
 import re
 import os
@@ -218,9 +222,9 @@ import os.path
 class HuabanCrawler():
     """ 抓去花瓣网上的图片 """
 
-    def __init__(self):
+    def __init__(self,query_str):
         """ 在当前文件夹下新建images文件夹存放抓取的图片 """
-        self.homeUrl = "http://huaban.com/favorite/travel_places/"
+        self.homeUrl = "http://huaban.com/search/?q="+query_str
         self.images = []
         if not os.path.exists('./images'):
             os.mkdir('./images')
@@ -283,8 +287,10 @@ class HuabanCrawler():
 
 
 if __name__ == '__main__':
-    hc = HuabanCrawler()
-    hc.get_image_info(20000)
+    query_str=input('请输入查询关键字：')
+    hc = HuabanCrawler(query_str)
+    img_number=int(input('图片数量：'))
+    hc.get_image_info(img_number)
     hc.down_images()
 
 
