@@ -73,7 +73,7 @@ if __name__=="__main__":
     item=0
     job_name=input('请输入职位名（如php）:').title()
 
-    with open('lagou_job_java.txt', 'a+', encoding='utf-8') as file:
+    with open('lagou_job_‘+job_name+’.txt', 'a+', encoding='utf-8') as file:
         while True:
 
             try:
