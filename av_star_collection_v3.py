@@ -380,6 +380,7 @@ def main():
             os.chdir('/')
             print('为了防止服务器屏蔽，休息一下5S。')
             sleep(choice(range(8)))
+            # sleep(5)
         elif command=='q':
             break
 
