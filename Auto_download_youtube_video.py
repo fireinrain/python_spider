@@ -46,7 +46,6 @@ try:
             time.sleep(2)
         else:
             break
-
 except Exception as e:
     print("加载完成")
 
@@ -83,4 +82,4 @@ browser.close() #关闭当前窗口（搜狗）
 browser.switch_to_window(handles[0]) #切换回百度窗口
 
 
-input("打断")
+# input("打断")
