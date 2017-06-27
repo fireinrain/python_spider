@@ -63,7 +63,7 @@ for i in link_list:
 # 2.找到输入框，把视频地址提交进去
 # 3.确认下载（需要设置下载的目录）
 convert_video_url = 'http://keepvid.com/'
-js = 'window.open(http://keepvid.com/);'
+js = 'window.open("http://keepvid.com/");'
 browser.execute_script(js)
 
 print(browser.current_window_handle)  # 输出当前窗口句柄（百度）
